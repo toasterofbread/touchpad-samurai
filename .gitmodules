@@ -1,0 +1,7 @@
+[submodule "addons/ds4godot/godot-cpp"]
+	path = addons/ds4godot/godot-cpp
+	url = https://github.com/godotengine/godot-cpp
+	branch = 4.0
+[submodule "addons/ds4godot"]
+	path = addons/ds4godot
+	url = https://github.com/toasterofbread/ds4godot/
