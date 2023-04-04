@@ -11,13 +11,17 @@ config_version=5
 [application]
 
 config/name="Tps"
-run/main_scene="res://main.tscn"
+run/main_scene="res://src/scenes/MainPage.tscn"
 config/features=PackedStringArray("4.0", "GL Compatibility")
 config/icon="res://icon.svg"
 
 [autoload]
 
 AntialiasedLine2DTexture="*res://addons/antialiased_line2d/texture.gd"
+
+[debug]
+
+gdscript/warnings/shadowed_variable=0
 
 [editor_plugins]
 

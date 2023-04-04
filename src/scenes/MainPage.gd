@@ -1,5 +1,6 @@
 extends Control
 
+const DS4_DEVICE_NAME = "Sony Interactive Entertainment Wireless Controller Touchpad"
 const KANJIDIC_PATH: String = "res://src/resources/kanjidic2.xml"
 const KANJIVG_PATH: String = "res://src/resources/kanjivg.zip"
 
@@ -8,15 +9,34 @@ const KANJIVG_PATH: String = "res://src/resources/kanjivg.zip"
 var kanji_data: Dictionary = {}
 var kanjivg: ZIPReader
 
+var ds4: DS4Godot = DS4Godot.new()
+var ds4_resolution = ds4.getResolution()
+
+var a = Vector2.ZERO
+var b = Vector2.ZERO
+
 func _ready():
+#	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+#	$Label.text = str(OS.get_system_dark_mode())
+	
+	initDS4()
+	initCanvas()
+
+func _exit_tree():
+	ds4.close()
+
+func _process(_delta: float):
+	
+	if Input.is_action_just_pressed("ui_accept"):
+		canvas.clear()
+
+func initCanvas():
 	kanjivg = ZIPReader.new()
 	
 	var err = kanjivg.open(KANJIVG_PATH)
 	if err != OK:
 		push_error(error_string(err))
 		return
-	
-#	$Label.text = str(OS.get_system_dark_mode())
 	
 	var file = FileAccess.open("res://kanji_data.json", FileAccess.READ)
 	
@@ -31,7 +51,61 @@ func _ready():
 		level.sort_custom(func(a, b): Kanji.sorter(a, b))
 
 	canvas.kanji_data = kanji_data
-	canvas.hint_char = findKanji("桜")
+	canvas.hint_char = findKanji("水")
+	
+	canvas.stroke_finished.connect(func(a): updateGuesses())
+
+func initDS4():
+	var devices = ds4.getDeviceList()
+	var device: String = null
+	
+	for path in devices:
+		if devices[path] == DS4_DEVICE_NAME:
+			device = path
+			break
+	
+	if device == null:
+		return
+	
+	var err = ds4.open(device)
+	if err != OK:
+		push_error(error_string(err))
+		return
+	
+	ds4.grab()
+	ds4.finger_position_changed.connect(onFingerPositionChanged)
+	ds4.finger_touching_changed.connect(onFingerTouchingChanged)
+	
+	add_child(ds4)
+
+func onFingerPositionChanged(finger: int, pos: Vector2, rel: Vector2):
+	pos = pos / ds4_resolution
+	
+	if finger == 0:
+		a = pos
+	else:
+		b = pos
+	
+	canvas.getStroke(finger).move(pos, rel / ds4_resolution)
+
+func onFingerTouchingChanged(finger: int, touching: bool):
+	if not touching:
+		canvas.getStroke(finger).finish()
+
+func updateGuesses():
+	var text = "DEPENDENT\n"
+	
+	var guesses: Array = canvas.recogniseWrittenCharacter(false)
+	
+	for guess in guesses:
+		text += guess[0] + " - " + str(guess[1]) + "\n"
+
+	text += "\nINDEPENDENT\n"
+	guesses = canvas.recogniseWrittenCharacter(true)
+	for guess in guesses:
+		text += guess[0] + " - " + str(guess[1]) + "\n"
+	
+	$Label.text = text
 
 func findKanji(literal: String):
 	assert(len(literal) == 1)
@@ -91,7 +165,7 @@ func loadKanjiData() -> Array:
 							if not element in node:
 								node[element] = {}
 							node = node[element]
-			
+		
 		error = parser.read()
 		if error != OK:
 			if error != ERR_FILE_EOF:

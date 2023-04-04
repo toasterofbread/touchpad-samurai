@@ -1,6 +1,49 @@
-[gd_scene load_steps=2 format=3 uid="uid://xx48efr42tlf"]
+[gd_scene load_steps=2 format=3 uid="uid://bm12cu4tapkty"]
 
-[ext_resource type="Script" path="res://Main.gd" id="1_k83go"]
+[sub_resource type="GDScript" id="GDScript_q551j"]
+script/source = "extends Control
+
+const DEVICE_NAME = \"Sony Interactive Entertainment Wireless Controller Touchpad\"
+
+var ds4: DS4Godot = DS4Godot.new()
+var ds4_resolution = ds4.getResolution()
+
+func _ready():
+#	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	
+	var devices = ds4.getDeviceList()
+	for path in devices:
+		if devices[path] == DEVICE_NAME:
+			var err = ds4.open(path)
+			if err != OK:
+				push_error(error_string(err))
+				break
+			
+			add_child(ds4)
+			ds4.grab()
+			ds4.finger_position_changed.connect(onFingerPositionChanged)
+			
+			break
+
+var a = Vector2.ZERO
+var b = Vector2.ZERO
+
+func onFingerPositionChanged(finger: int, pos: Vector2, rel: Vector2):
+	if finger == 0:
+		a = pos / ds4_resolution
+	else:
+		b = pos / ds4_resolution
+	
+	$Label.text = \"A: \" + str(a) + \"\\nB: \" + str(b)
+
+func _exit_tree():
+	ds4.close()
+
+#func _input(event: InputEvent):
+#
+#	if event is InputEventMouseMotion:
+#		print(event.relative)
+"
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -9,7 +52,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_k83go")
+script = SubResource("GDScript_q551j")
 
 [node name="Label" type="Label" parent="."]
 layout_mode = 0
