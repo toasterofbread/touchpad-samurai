@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "*.rescn": "yaml",
+        "*.json": "jsonc",
+        "optional": "cpp",
+        "variant": "cpp"
+    }
+}
