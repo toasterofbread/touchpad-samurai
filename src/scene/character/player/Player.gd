@@ -2,24 +2,30 @@ extends CharacterBody2D
 class_name Player
 
 const STATES_DIR = "res://src/scene/character/player/state/"
-const WALK_SPEED = 300.0
-const RUN_SPEED = 300.0
-var GRAVITY: float = ProjectSettings.get_setting("physics/2d/default_gravity")
+var GRAVITY: float = 980
 
 signal state_changed(from: PlayerState, to: PlayerState, data)
 
 @onready var animator: PlayerAnimator = $AnimatedSprite2D
+@onready var hud: PlayerHUD = $HUD
+@onready var camera: Camera2D = $Camera
 
 enum State {
-	WALK, IDLE
+	WALK, IDLE, CROUCH
 }
 var states: Dictionary = null
 var state: PlayerState = null
 var previous_state: PlayerState = null
 
-func _init():
+var controllable = true
+
+func _ready():
 	states = loadStates()
 	state = states[State.IDLE]
+	state.onStateEntered(null, null)
+	
+	assert(Game.player == null)
+	Game.player = self
 
 func loadStates() -> Dictionary:
 	var ret: Dictionary = {}
@@ -34,7 +40,19 @@ func loadStates() -> Dictionary:
 		assert(!ret.has(state.getType()))
 		ret[state.getType()] = state
 	
+	for s in State.values():
+		var state: PlayerState = ret.get(s)
+		
+		if state == null:
+			push_error("No script loaded for state " + State.keys()[state])
+			continue
+		
+		state.init()
+	
 	return ret
+
+func getState(state: State) -> PlayerState:
+	return states[state]
 
 func changeState(to: State, data = null):
 	previous_state = state
@@ -50,4 +68,11 @@ func _process(delta: float):
 	state.process(delta)
 
 func _physics_process(delta: float):
+	velocity.x = 0
+#	velocity.y += GRAVITY * delta
+	
 	state.physicsProcess(delta)
+	move_and_slide()
+
+func enemySighted(enemy: Enemy):
+	Game.beginEncounter(enemy)

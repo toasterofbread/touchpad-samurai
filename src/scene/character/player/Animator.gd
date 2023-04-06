@@ -17,15 +17,28 @@ enum Anim {
 func getCurrentFrame() -> int:
 	return frame
 
-func playAnim(anim: Anim):
+func playAnim(anim: Anim, reverse: bool = false):
+	var anim_id: String
 	match anim:
 		Anim.IDLE:
-			play("idle")
+			anim_id = "idle"
 		Anim.WALK:
-			play("walk")
+			anim_id = "walk"
+		Anim.RUN:
+			anim_id = "run"
+		Anim.CROUCH:
+			anim_id = "crouch"
 		_:
-			push_error("Animation not implemented: " + str(anim))
+			assert(false, "Animation not implemented: " + str(anim))
 			return
+	
+	if not reverse:
+		play(anim_id)
+	else:
+		play_backwards(anim_id)
+
+func getFacing() -> int:
+	return -1 if flip_h else 1
 
 func setFacing(direction: int):
 	assert(direction == -1 || direction == 1)

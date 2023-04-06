@@ -6,6 +6,9 @@ var player: Player
 func _init(player: Player):
 	self.player = player
 
+func init():
+	pass
+
 func getType() -> Player.State:
 	push_error("Not implemented")
 	return null
